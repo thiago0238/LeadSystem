@@ -20,42 +20,40 @@ model User {
   @@map("users")
 }
 
-model Course {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique
-  description String?
-  createdAt   DateTime @default(now()) @map("created_at")
+// model Course {
+//   id          Int      @id @default(autoincrement())
+//   name        String   @unique
+//   description String?
+//   createdAt   DateTime @default(now()) @map("created_at")
   
-  primaryLeads   Lead[] @relation("PrimaryCourse")
-  secondaryLeads Lead[] @relation("SecondaryCourse")
-  certificates   Certificate[]
+//   primaryLeads   Lead[] @relation("PrimaryCourse")
+//   secondaryLeads Lead[] @relation("SecondaryCourse")
+//   certificates   Certificate[]
 
-  @@map("courses")
-}
+//   @@map("courses")
+// }
 
-model Lead {
-  id               Int      @id @default(autoincrement())
-  name             String
-  email            String
-  primaryCourse    Course   @relation("PrimaryCourse", fields: [primaryCourseId], references: [id])
-  primaryCourseId  Int      @map("primary_course_id")
-  secondaryCourse  Course?  @relation("SecondaryCourse", fields: [secondaryCourseId], references: [id])
-  secondaryCourseId Int?     @map("secondary_course_id")
-  city             String?
-  state            String?
-  ipAddress        String?  @map("ip_address")
-  createdAt        DateTime @default(now()) @map("created_at")
+// model Lead {
+//   id               Int      @id @default(autoincrement())
+//   name             String
+//   email            String
+//   primaryCourse    Course   @relation("PrimaryCourse", fields: [primaryCourseId], references: [id])
+//   primaryCourseId  Int      @map("primary_course_id")
+//   secondaryCourse  Course?  @relation("SecondaryCourse", fields: [secondaryCourseId], references: [id])
+//   secondaryCourseId Int?     @map("secondary_course_id")
+//   city             String?
+//   state            String?
+//   ipAddress        String?  @map("ip_address")
+//   createdAt        DateTime @default(now()) @map("created_at")
   
-  certificates     Certificate[]
+//   certificates     Certificate[]
 
-  @@map("leads")
-}
+//   @@map("leads")
+// }
 
 model Certificate {
   id        Int      @id @default(autoincrement())
-  lead      Lead     @relation(fields: [leadId], references: [id])
-  leadId    Int      @map("lead_id")
-  course    Course   @relation(fields: [courseId], references: [id])
+  leadId    Int     
   courseId  Int      @map("course_id")
   sentAt    DateTime @default(now()) @map("sent_at")
   pdfUrl    String?  @map("pdf_url")

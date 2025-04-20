@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Calculadora de Área de Lote</title>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAnZ2i8WqVqDeHG9W8p8PhxhPaBh1s8W3Y&libraries=drawing,geometry"></script>
+    <style>
+      #map {
+        height: 90vh;
+        width: 100%;
+      }
+      #area {
+        padding: 10px;
+        font-size: 18px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <div id="area">Área: 0 m²</div>
+
+    <script>
+      let map
+      let drawingManager
+      let currentPolygon = null
+
+      function initMap() {
+        map = new google.maps.Map(document.getElementById("map"), {
+          center: { lat: -16.6869, lng: -49.2648 }, // Goiânia, por exemplo
+          zoom: 18,
+        })
+
+        drawingManager = new google.maps.drawing.DrawingManager({
+          drawingMode: google.maps.drawing.OverlayType.POLYGON,
+          drawingControl: true,
+          drawingControlOptions: {
+            position: google.maps.ControlPosition.TOP_CENTER,
+            drawingModes: [google.maps.drawing.OverlayType.POLYGON],
+          },
+          polygonOptions: {
+            editable: true,
+            draggable: true,
+          },
+        })
+
+        drawingManager.setMap(map)
+
+        google.maps.event.addListener(drawingManager, "overlaycomplete", (event) => {
+          if (currentPolygon) currentPolygon.setMap(null) // remove anterior
+
+          currentPolygon = event.overlay
+          const path = currentPolygon.getPath()
+          calcularArea(path)
+
+          // Atualiza se mover ou editar
+          google.maps.event.addListener(path, "set_at", () => calcularArea(path))
+          google.maps.event.addListener(path, "insert_at", () => calcularArea(path))
+        })
+      }
+
+      function calcularArea(path) {
+        const area = google.maps.geometry.spherical.computeArea(path)
+        document.getElementById("area").innerText = `Área: ${area.toFixed(2)} m²`
+      }
+
+      window.onload = initMap
+    </script>
+  </body>
+</html>
