@@ -28,14 +28,16 @@ export async function POST(request: NextRequest) {
 console.log("User creation response:", response)
 console.log("User creation response id:", response[0].id)
 console.log("User creation response username:", primaryCourseId)
-    if (primaryCourseId) {
+   
+
       const couser = await callMoodleApiPost("enrol_manual_enrol_users", {
         "enrolments[0][roleid]": 5, // aluno
         "enrolments[0][userid]": response[0].id, // id do usuário criado
         "enrolments[0][courseid]": primaryCourseId, // id do curso
       })
       console.log("Enrolment response:", couser)
-    }
+  
+      
       
 
     return NextResponse.json({ success: true, response })

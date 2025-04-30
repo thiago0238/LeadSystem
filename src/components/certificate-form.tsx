@@ -247,11 +247,11 @@ export default function CertificateForm({ totalLeads, course, students, notasCur
                 <Button type="submit" disabled={isLoading}>
                   {isLoading ? "Enviando..." : "Enviar Certificados"}
                 </Button>
-                <p className="flex  text-sm text-gray-500">
+                {/* <p className="flex  text-sm text-gray-500">
                   teste {students.length} alunos cadastrados
                   Total de Alunos: {students.filter((student) => student.courseId === Number(selectedCourse)).length}/
                   {selectedCourse}
-                </p>
+                </p> */}
                 <AlunosTable
                   key={courseForm.getValues("courseId")}
                   searchResults={

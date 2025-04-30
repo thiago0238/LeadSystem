@@ -91,6 +91,8 @@ export default function PublicForm() {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
+    console.log("Valores do formulário:", values);
+    console.log("Valores do formulário (JSON):", JSON.stringify(values));
     try {
       const result = await submitLead({
         firstname: values.firstname,
