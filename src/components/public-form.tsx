@@ -211,14 +211,15 @@ export default function PublicForm() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {courses.map((course) => (
-                        <SelectItem
-                          key={course.id}
-                          value={course.id.toString()}
-                        >
-                          {course.shortname}
-                        </SelectItem>
-                      ))}
+                      {Array.isArray(courses) &&
+                        courses.map((course) => (
+                          <SelectItem
+                            key={course.id}
+                            value={course.id.toString()}
+                          >
+                            {course.shortname}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -241,14 +242,15 @@ export default function PublicForm() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {courses.map((course) => (
-                        <SelectItem
-                          key={course.id}
-                          value={course.id.toString()}
-                        >
-                          {course.shortname}
-                        </SelectItem>
-                      ))}
+                      {Array.isArray(courses) &&
+                        courses.map((course) => (
+                          <SelectItem
+                            key={course.id}
+                            value={course.id.toString()}
+                          >
+                            {course.shortname}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />

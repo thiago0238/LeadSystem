@@ -1,5 +1,3 @@
-"use client";
-
 import PublicForm from "@/components/public-form";
 
 export default function Home() {
