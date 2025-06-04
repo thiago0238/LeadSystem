@@ -28,3 +28,5 @@ export type DashboardStatsProps = {
   notasCursos: NotasCursos[];
   cetificate?: Certificate[]
 };
+
+export type ParamsToken = Promise<{ token: string }>;

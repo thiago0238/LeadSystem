@@ -6,6 +6,7 @@ export async function GET(request: NextRequest) {
   try {
     // Get all courses or courses by category
     const courses = await callMoodleApi("core_course_get_courses")
+    console.log("Courses fetched:", courses)
     return NextResponse.json(courses, { status: 200 })
   } catch (error: any) {
     console.error("Error fetching courses:", error)
@@ -34,6 +35,7 @@ export async function POST(request: NextRequest) {
         },
       ],
     })
+    console.log("Course created:", course)
 
     return NextResponse.json({ success: true, course }, { status: 201 })
   } catch (error: any) {

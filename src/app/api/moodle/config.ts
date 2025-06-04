@@ -94,6 +94,8 @@ export async function callMoodleApi(
       () => controller.abort(),
       moodleConfig.timeout
     );
+    console.log(`Calling Moodle API: ${url.toString()}`);
+
     const response = await fetch(url.toString(), {
       method: "GET",
       headers: {
@@ -106,6 +108,7 @@ export async function callMoodleApi(
 
     // 🔥 Leia o corpo da resposta apenas uma vez
     const responseBody = await response.text(); // Obtém a resposta como texto
+    console.log(`Calling Moodle API: ${responseBody}`);
     try {
       const data = JSON.parse(responseBody); // Converte o texto para JSON
 
@@ -118,7 +121,7 @@ export async function callMoodleApi(
       return data;
     } catch (error) {
       console.error("Error parsing JSON from Moodle API:", error);
-      throw new Error("Failed to parse Moodle API response");
+      throw new Error(`Failed to parse Moodle API response: ${error}`);
     }
   } catch (error) {
     console.error("Error calling Moodle API:", error);

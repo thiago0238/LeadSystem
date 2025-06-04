@@ -10,14 +10,24 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  expires      DateTime
+  userId       String      @map("userId")
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
 model User {
-  id        Int      @id @default(autoincrement())
+  id        String      @id @default(cuid())
   name      String
   email     String   @unique
   password  String
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("users")
+  Session Session[]
 }
 
 // model Course {
