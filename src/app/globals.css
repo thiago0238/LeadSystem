@@ -109,7 +109,7 @@
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-border outline-ring/50;
   }
   body {
     @apply bg-background text-foreground;
@@ -370,6 +370,7 @@
     @apply bg-background text-foreground;
   }
 }
+
 .spinner {
   width: 16px;
   height: 16px;
@@ -377,11 +378,9 @@
   border-top: 2px solid #000;
   border-radius: 50%;
   opacity: 0;
-  animation:
-    fadeIn 500ms 100ms forwards,
-    rotate 1s linear infinite;
+  animation: fadeIn 500ms 100ms forwards, rotate 1s linear infinite;
 }
- 
+
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -390,7 +389,7 @@
     opacity: 1;
   }
 }
- 
+
 @keyframes rotate {
   to {
     transform: rotate(360deg);

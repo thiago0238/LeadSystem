@@ -49,7 +49,7 @@ const formSchema = z.object({
 
 type Course = {
   id: number;
-  shortname: string;
+  fullname: string;
 };
 
 export default function PublicForm() {
@@ -217,7 +217,7 @@ export default function PublicForm() {
                             key={course.id}
                             value={course.id.toString()}
                           >
-                            {course.shortname}
+                            {course.fullname}
                           </SelectItem>
                         ))}
                     </SelectContent>
@@ -248,7 +248,7 @@ export default function PublicForm() {
                             key={course.id}
                             value={course.id.toString()}
                           >
-                            {course.shortname}
+                            {course.fullname}
                           </SelectItem>
                         ))}
                     </SelectContent>

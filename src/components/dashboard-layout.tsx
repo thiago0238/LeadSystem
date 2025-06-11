@@ -15,6 +15,7 @@ import {
   Menu,
   X,
 } from "lucide-react";
+import LoadingIndicator from "./loading-indicator";
 
 export default function DashboardLayout({
   children,
@@ -75,6 +76,7 @@ export default function DashboardLayout({
                       }`}
                     />
                     {item.name}
+                    <LoadingIndicator />
                   </Link>
                 ))}
               </nav>
@@ -120,6 +122,7 @@ export default function DashboardLayout({
                       }`}
                     />
                     {item.name}
+                    <LoadingIndicator />
                   </Link>
                 ))}
               </nav>

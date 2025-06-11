@@ -1,360 +1,484 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { toast } from "@/components/ui/use-toast"
-import { sendCertificates } from "@/app/actions/certificate-actions"
-import { AlunosTable } from "@/app/admin/certificates/_components/table"
-import { DashboardStatsProps } from "@/types"
+import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { LoadingSpinner } from "@/components/ui/loading-spinner"
+import { useLoading } from "@/hooks/use-loading"
+import { toast } from "@/hooks/use-toast"
+import { Search, Send, Users, Award, CheckCircle, XCircle, Filter, GraduationCap, Star, BookOpen } from "lucide-react"
 
-const byCourseSchema = z.object({
-  courseId: z.string({ required_error: "Selecione um curso" }),
+// Tipos de dados
+interface Student {
+  id: number
+  nome: string
+  email: string
+  curso: string
+  courseId: number
+  nota: number
+  situacao: boolean
+  dataMatricula: string
+  certificadoEnviado?: boolean
+  uniqueId: string
+}
+
+interface Course {
+  id: number
+  name: string
+  notaMinima: number
+}
+
+interface CertificateFormProps {
+  students: Student[]
+  courses: Course[]
+}
+
+const searchSchema = z.object({
+  searchTerm: z.string().optional(),
+  courseId: z.string().optional(),
+  status: z.string().optional(),
 })
 
-const byLeadSchema = z.object({
-  searchTerm: z.string().min(3, { message: "Digite pelo menos 3 caracteres" }),
-})
+export function CertificateForm({ students, courses }: CertificateFormProps) {
+  const [selectedItems, setSelectedItems] = useState<string[]>([])
+  const { isLoading, withLoading } = useLoading()
 
-export default function CertificateForm({ totalLeads, course, students, notasCursos, cetificate }: DashboardStatsProps) {
-
-  console.log("students", students)
-  const [isLoading, setIsLoading] = useState(false)
-  const [searchResults, setSearchResults] = useState<any[]>([])
-  const [selectedLeads, setSelectedLeads] = useState<number[]>([])
-  const [sendEmail, setSendEmail] = useState<any[]>([])
-
-  const [selectedCourse, setSelectedCourse] = useState<number | null>(null)
-
-  const courseForm = useForm<z.infer<typeof byCourseSchema>>({
-    resolver: zodResolver(byCourseSchema),
-    defaultValues: {
-      courseId: "",
-    },
-  })
-
-  const leadForm = useForm<z.infer<typeof byLeadSchema>>({
-    resolver: zodResolver(byLeadSchema),
+  const form = useForm<z.infer<typeof searchSchema>>({
+    resolver: zodResolver(searchSchema),
     defaultValues: {
       searchTerm: "",
+      courseId: "",
+      status: "",
     },
   })
 
+  const watchedValues = form.watch()
 
-  const onSubmit = async (id: number) => {
-    setIsLoading(true)
-    try {
-      const student = students.find((student) => student.id === id && student.courseId === selectedCourse)
-      if (!student) {
+  // Filtrar alunos baseado nos critérios
+  const filteredStudents = useMemo(() => {
+    let filtered = students
+
+    if (watchedValues.searchTerm) {
+      filtered = filtered.filter(
+        (student) =>
+          student.nome.toLowerCase().includes(watchedValues.searchTerm!.toLowerCase()) ||
+          student.email.toLowerCase().includes(watchedValues.searchTerm!.toLowerCase()),
+      )
+    }
+
+    if (watchedValues.courseId && watchedValues.courseId !== "0") {
+      filtered = filtered.filter((student) => student.courseId === Number(watchedValues.courseId))
+    }
+
+    if (watchedValues.status && watchedValues.status !== "0") {
+      switch (watchedValues.status) {
+        case "approved":
+          filtered = filtered.filter((student) => student.situacao)
+          break
+        case "reproved":
+          filtered = filtered.filter((student) => !student.situacao)
+          break
+        case "certificate-sent":
+          filtered = filtered.filter((student) => student.certificadoEnviado)
+          break
+        case "certificate-pending":
+          filtered = filtered.filter((student) => student.situacao && !student.certificadoEnviado)
+          break
+      }
+    }
+
+    return filtered
+  }, [students, watchedValues])
+
+  // Estatísticas
+  const stats = useMemo(() => {
+    const total = filteredStudents.length
+    const approved = filteredStudents.filter((s) => s.situacao).length
+    const certificatesSent = filteredStudents.filter((s) => s.certificadoEnviado).length
+    const pending = filteredStudents.filter((s) => s.situacao && !s.certificadoEnviado).length
+    const averageGrade = total > 0 ? filteredStudents.reduce((sum, s) => sum + s.nota, 0) / total : 0
+    const uniqueStudents = new Set(filteredStudents.map((s) => s.id)).size
+
+    return { total, approved, certificatesSent, pending, averageGrade, uniqueStudents }
+  }, [filteredStudents])
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const eligibleItems = filteredStudents
+        .filter((student) => student.situacao && !student.certificadoEnviado)
+        .map((student) => student.uniqueId)
+      setSelectedItems(eligibleItems)
+    } else {
+      setSelectedItems([])
+    }
+  }
+
+  const handleSelectItem = (uniqueId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedItems((prev) => [...prev, uniqueId])
+    } else {
+      setSelectedItems((prev) => prev.filter((id) => id !== uniqueId))
+    }
+  }
+
+  const handleSendCertificates = async (itemIds?: string[]) => {
+    const idsToSend = itemIds || selectedItems
+    if (idsToSend.length === 0) return
+
+    await withLoading(async () => {
+      try {
+        const certificatesToSend = idsToSend.map((uniqueId) => {
+          const [leadId, courseId] = uniqueId.split("-")
+          return {
+            leadId: Number(leadId),
+            courseId: Number(courseId),
+          }
+        })
+
+        const response = await fetch("/api/certificates/send", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            certificates: certificatesToSend,
+          }),
+        })
+
+        const result = await response.json()
+
+        if (result.success) {
+          toast({
+            title: "Certificados enviados com sucesso!",
+            description: `${idsToSend.length} certificado(s) enviado(s).`,
+          })
+          setSelectedItems([])
+          window.location.reload()
+        } else {
+          throw new Error(result.error || "Erro ao enviar certificados")
+        }
+      } catch (error) {
+        console.error("Erro ao enviar certificados:", error)
         toast({
-          title: "Aluno não encontrado",
-          description: "O aluno não foi encontrado ou não está matriculado no curso selecionado.",
+          title: "Erro no envio",
+          description: "Ocorreu um erro ao enviar os certificados. Tente novamente.",
           variant: "destructive",
         })
-        return
       }
-     const response = await fetch('/api/email',{
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: student.email,
-          curso: student.curso,
-          nome: student.nome,
-          studentId: student.id,
-          courseId: student.courseId,
-        }),
-      })
-
-      const result = await response.json()
-      if (result.success) {
-        toast({
-          title: "Certificado enviado com sucesso!",
-          description: `Certificado enviado para o aluno.`,
-        })
-      } else {
-        throw new Error(result.error || "Erro ao enviar certificado")
-      }
-    } catch (error) {
-      console.error("Erro ao enviar certificado:", error)
-      toast({
-        title: "Erro no envio",
-        description: "Ocorreu um erro ao enviar o certificado. Por favor, tente novamente.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsLoading(false)
-    }
-  }
-  const onSubmitByCourse = async (values: z.infer<typeof byCourseSchema>) => {
-    setIsLoading(true)
-
-    // try {
-    //   const result = await sendCertificates({
-    //     type: "course",
-    //     courseId: Number.parseInt(values.cursoId),
-    //   });
-
-    //   if (result.success) {
-    //     toast({
-    //       title: "Certificados enviados com sucesso!",
-    //       description: `${result.count} certificados foram enviados.`,
-    //     });
-    //     courseForm.reset();
-    //   } else {
-    //     throw new Error(result.error || "Erro ao enviar certificados");
-    //   }
-    // } catch (error) {
-    //   console.error("Erro ao enviar certificados:", error);
-    //   toast({
-    //     title: "Erro no envio",
-    //     description:
-    //       "Ocorreu um erro ao enviar os certificados. Por favor, tente novamente.",
-    //     variant: "destructive",
-    //   });
-    // } finally {
-    //   setIsLoading(false);
-    // }
-    setIsLoading(false)
+    })
   }
 
-  const onSubmitByLead = async (values: z.infer<typeof byLeadSchema>) => {
-    setIsLoading(true)
-    try {
-      // First search for leads
-      // const response = await fetch(
-      //   `/api/leads/search?q=${encodeURIComponent(values.searchTerm)}`
-      // );
-      // const data = await response.json();
-
-      // if (data.error) {
-      //   throw new Error(data.error);
-      // }
-      const data = students.filter((student) => student.nome.toLowerCase().includes(values.searchTerm.toLowerCase()))
-
-      setSearchResults(data)
-      setIsLoading(false)
-    } catch (error) {
-      console.error("Erro ao buscar leads:", error)
-      toast({
-        title: "Erro na busca",
-        description: "Ocorreu um erro ao buscar os leads. Por favor, tente novamente.",
-        variant: "destructive",
-      })
-      setIsLoading(false)
-    }
+  const getGradeColor = (grade: number, minGrade: number) => {
+    if (grade >= minGrade) return "text-green-600"
+    if (grade >= minGrade * 0.7) return "text-yellow-600"
+    return "text-red-600"
   }
 
-  const toggleLeadSelection = (leadId: number) => {
-    setSelectedLeads((prev) => (prev.includes(leadId) ? prev.filter((id) => id !== leadId) : [...prev, leadId]))
-  }
-
-  const sendSelectedCertificates = async () => {
-    if (selectedLeads.length === 0) {
-      toast({
-        title: "Nenhum lead selecionado",
-        description: "Selecione pelo menos um lead para enviar certificados.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    setIsLoading(true)
-    try {
-      const result = await sendCertificates({
-        type: "leads",
-        leadIds: selectedLeads,
-      })
-
-      if (result.success) {
-        toast({
-          title: "Certificados enviados com sucesso!",
-          description: `${result.count} certificados foram enviados.`,
-        })
-        setSelectedLeads([])
-        setSearchResults([])
-        leadForm.reset()
-      } else {
-        throw new Error(result.error || "Erro ao enviar certificados")
-      }
-    } catch (error) {
-      console.error("Erro ao enviar certificados:", error)
-      toast({
-        title: "Erro no envio",
-        description: "Ocorreu um erro ao enviar os certificados. Por favor, tente novamente.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsLoading(false)
-    }
+  const getGradeBadgeVariant = (approved: boolean) => {
+    return approved ? "default" : "destructive"
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Envio de Certificados</CardTitle>
-        <CardDescription>Envie certificados para alunos por curso ou individualmente</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Tabs defaultValue="course">
-          <TabsList className="mb-4">
-            <TabsTrigger value="course">Por Curso</TabsTrigger>
-            <TabsTrigger value="lead">Por Aluno</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="course">
-            <Form {...courseForm}>
-              <form onSubmit={courseForm.handleSubmit(onSubmitByCourse)} className="space-y-4">
-                <FormField
-                  control={courseForm.control}
-                  name="courseId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Curso</FormLabel>
-                      <Select
-                        onValueChange={(value) => {
-                          field.onChange(value) // atualiza o form
-                          setSearchResults(students.filter((student) => student.courseId === Number(value)))
-                          setSelectedCourse(Number(value)) // atualiza o estado local
-                        }}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione um curso" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {course.map((course) => (
-                            <SelectItem key={course.id} value={course.id.toString()}>
-                              {course.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading ? "Enviando..." : "Enviar Certificados"}
-                </Button>
-                {/* <p className="flex  text-sm text-gray-500">
-                  teste {students.length} alunos cadastrados
-                  Total de Alunos: {students.filter((student) => student.courseId === Number(selectedCourse)).length}/
-                  {selectedCourse}
-                </p> */}
-                <AlunosTable
-                  key={courseForm.getValues("courseId")}
-                  searchResults={
-                    courseForm.getValues("courseId")
-                      ? students.filter((student) => student.courseId === Number(selectedCourse))
-                      : []
-                  }
-                  certificate={cetificate || []}
-                  voidSelect={(id) => {
-                    onSubmit(id)
-                  }}
-                />
-              </form>
-            </Form>
-          </TabsContent>
-
-          <TabsContent value="lead">
-            <Form {...leadForm}>
-              <form onSubmit={leadForm.handleSubmit(onSubmitByLead)} className="space-y-4">
-                <FormField
-                  control={leadForm.control}
-                  name="searchTerm"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Buscar por Nome ou Email</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Digite o nome ou email do aluno" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading ? "Buscando..." : "Buscar Alunos"}
-                </Button>
-              </form>
-            </Form>
-
-            {searchResults.length > 0 && (
-              <div className="mt-6">
-                <h3 className="text-lg font-medium mb-2">Resultados da Busca</h3>
-                <div className="border rounded-md">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Selecionar
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Nome
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Email
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Curso Principal
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {/* {searchResults.map((lead) => (
-                        <tr key={lead.id}>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <input
-                              type="checkbox"
-                              checked={selectedLeads.includes(lead.id)}
-                              onChange={() => toggleLeadSelection(lead.id)}
-                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                            />
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{lead}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{lead.email}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {lead.primaryCourse.name}
-                          </td>
-                        </tr>
-                      ))} */}
-                    </tbody>
-                  </table>
-                </div>
-
-                <div className="mt-4">
-                  <Button onClick={sendSelectedCertificates} disabled={isLoading || selectedLeads.length === 0}>
-                    {isLoading ? "Enviando..." : `Enviar para ${selectedLeads.length} selecionado(s)`}
-                  </Button>
-                </div>
+    <div className="space-y-6">
+      {/* Header com Estatísticas */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-blue-600" />
+              <div>
+                <p className="text-2xl font-bold">{stats.uniqueStudents}</p>
+                <p className="text-xs text-muted-foreground">Alunos Únicos</p>
               </div>
-            )}
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <BookOpen className="h-4 w-4 text-indigo-600" />
+              <div>
+                <p className="text-2xl font-bold text-indigo-600">{stats.total}</p>
+                <p className="text-xs text-muted-foreground">Matrículas</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <div>
+                <p className="text-2xl font-bold text-green-600">{stats.approved}</p>
+                <p className="text-xs text-muted-foreground">Aprovados</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Award className="h-4 w-4 text-purple-600" />
+              <div>
+                <p className="text-2xl font-bold text-purple-600">{stats.certificatesSent}</p>
+                <p className="text-xs text-muted-foreground">Certificados Enviados</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Star className="h-4 w-4 text-yellow-600" />
+              <div>
+                <p className="text-2xl font-bold text-yellow-600">{stats.averageGrade.toFixed(1)}</p>
+                <p className="text-xs text-muted-foreground">Média Geral</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Filtros */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="h-5 w-5" />
+            Filtros e Busca
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <FormField
+                control={form.control}
+                name="searchTerm"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Buscar Aluno</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input placeholder="Nome ou email..." className="pl-10" {...field} />
+                      </div>
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="courseId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Curso</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Todos os cursos" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="0">Todos os cursos</SelectItem>
+                        {courses.map((course) => (
+                          <SelectItem key={course.id} value={course.id.toString()}>
+                            {course.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Todos os status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="0">Todos os status</SelectItem>
+                        <SelectItem value="approved">Aprovados</SelectItem>
+                        <SelectItem value="reproved">Reprovados</SelectItem>
+                        <SelectItem value="certificate-sent">Certificado Enviado</SelectItem>
+                        <SelectItem value="certificate-pending">Certificado Pendente</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+            </div>
+          </Form>
+        </CardContent>
+      </Card>
+
+      {/* Ações em Massa */}
+      {selectedItems.length > 0 && (
+        <Card className="border-blue-200 bg-blue-50/50">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-blue-600" />
+                <span className="font-medium">{selectedItems.length} certificado(s) selecionado(s)</span>
+              </div>
+              <Button onClick={() => handleSendCertificates()} disabled={isLoading} className="gap-2">
+                {isLoading ? <LoadingSpinner size="sm" /> : <Send className="h-4 w-4" />}
+                {isLoading ? "Enviando..." : "Enviar Certificados"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Lista de Alunos */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <GraduationCap className="h-5 w-5" />
+                Lista de Matrículas ({filteredStudents.length})
+              </CardTitle>
+              <CardDescription>Gerencie os alunos e envie certificados para os aprovados em cada curso</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                checked={
+                  selectedItems.length > 0 &&
+                  selectedItems.length === filteredStudents.filter((s) => s.situacao && !s.certificadoEnviado).length
+                }
+                onCheckedChange={handleSelectAll}
+                disabled={isLoading}
+              />
+              <span className="text-sm text-muted-foreground">Selecionar todos elegíveis</span>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          <ScrollArea className="h-[600px]">
+            <div className="space-y-2 p-4">
+              {filteredStudents.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Nenhum aluno encontrado com os filtros aplicados</p>
+                </div>
+              ) : (
+                filteredStudents.map((student) => {
+                  const course = courses.find((c) => c.id === student.courseId)
+                  const isEligible = student.situacao && !student.certificadoEnviado
+                  const isSelected = selectedItems.includes(student.uniqueId)
+
+                  return (
+                    <Card
+                      key={student.uniqueId}
+                      className={`transition-all duration-200 ${
+                        isSelected ? "ring-2 ring-blue-500 bg-blue-50/50" : "hover:shadow-md"
+                      } ${isLoading ? "opacity-50" : ""}`}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={(checked) => handleSelectItem(student.uniqueId, !!checked)}
+                              disabled={!isEligible || isLoading}
+                            />
+
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h3 className="font-semibold">{student.nome}</h3>
+                                <Badge variant="outline" className="gap-1">
+                                  <BookOpen className="h-3 w-3" />
+                                  {student.curso}
+                                </Badge>
+                                {student.certificadoEnviado && (
+                                  <Badge variant="secondary" className="gap-1">
+                                    <Award className="h-3 w-3" />
+                                    Certificado Enviado
+                                  </Badge>
+                                )}
+                              </div>
+
+                              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                <span>{student.email}</span>
+                                <span>•</span>
+                                <span>ID: {student.id}</span>
+                                <span>•</span>
+                                <span>Matrícula: {new Date(student.dataMatricula).toLocaleDateString()}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-4">
+                            {/* Nota */}
+                            <div className="text-center">
+                              <div
+                                className={`text-2xl font-bold ${getGradeColor(student.nota, course?.notaMinima || 7)}`}
+                              >
+                                {student.nota}
+                              </div>
+                              <div className="text-xs text-muted-foreground">Nota</div>
+                            </div>
+
+                            {/* Status de Aprovação */}
+                            <Badge variant={getGradeBadgeVariant(student.situacao)} className="gap-1">
+                              {student.situacao ? (
+                                <>
+                                  <CheckCircle className="h-3 w-3" />
+                                  Aprovado
+                                </>
+                              ) : (
+                                <>
+                                  <XCircle className="h-3 w-3" />
+                                  Reprovado
+                                </>
+                              )}
+                            </Badge>
+
+                            {/* Ação Individual */}
+                            {isEligible && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleSendCertificates([student.uniqueId])}
+                                disabled={isLoading}
+                                className="gap-1"
+                              >
+                                {isLoading ? <LoadingSpinner size="sm" /> : <Send className="h-3 w-3" />}
+                                Enviar
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                })
+              )}
+            </div>
+          </ScrollArea>
+        </CardContent>
+      </Card>
+    </div>
   )
 }

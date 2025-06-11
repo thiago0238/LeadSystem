@@ -1,7 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { callMoodleApi, callMoodleApiPost } from "../config";
-import { use } from "react";
-import Email from "next-auth/providers/email";
+import { callMoodleApiPost } from "../config";
+import { Gradereport_user_get_grade_items } from "@/types";
 
 // GET /api/moodle/certificates
 // export async function GET(request: NextRequest) {
@@ -43,10 +42,9 @@ export async function GET(req: NextRequest) {
   try {
     const cursos = await callMoodleApiPost("core_course_get_courses", {});
     const resultado: any[] = [];
-    const cusosDisponiveis = []
+    const cusosDisponiveis = [];
     const notasCursos = [];
-    
-    
+
     for (const curso of cursos) {
       let aptos = 0;
       let reprovados = 0;
@@ -56,71 +54,67 @@ export async function GET(req: NextRequest) {
         name: curso.fullname,
       };
       cusosDisponiveis.push(coursos);
-
-
-      const usuarios = await callMoodleApiPost("core_enrol_get_enrolled_users", {
-        courseid: curso.id,
-      });
-      for (const user of usuarios) {
-        console.log(user);
-        const isStudent = user.roles?.some(
-          (r: any) => r.shortname === "student"
-        );
-        if (!isStudent) continue;
-
-        const grades = await callMoodleApiPost(
-          "gradereport_user_get_grade_items",
-          {
-            courseid: curso.id,
-            userid: user.id,
-          }
-        );
-
-        const finalGrade = grades?.usergrades?.[0]?.gradeitems?.find(
-          (item: any) => item.itemtype === "course"
-        );
-
-        if (finalGrade) {
-          const grade = parseFloat(
-            (finalGrade.gradeformatted || "0").replace(",", ".")
-          );
-          const minGrade = 6.0;
-
-          if (grade >= minGrade) {
-            aptos += 1;
-          } else {
-            reprovados += 1;
-          }
-
-          const aluno = {
-            id: user.id,
-            nome: user.fullname,
-            email: user.email,
-            nota: grade,
-            situacao: grade >= minGrade ? "Apto" : "Reprovado",
-            curso: curso.fullname,
-            courseId: curso.id,
-          };
-          resultado.push(aluno);
+      const grades: Gradereport_user_get_grade_items = await callMoodleApiPost(
+        "gradereport_user_get_grade_items",
+        {
+          courseid: curso.id,
         }
-      }
-      notasCursos.push({
-        id: curso.id,
-       aptos,
-        reprovados,
-      });
+      );
+
+      if (!grades.usergrades) return NextResponse.json(
+        { error: "User ID is required" },
+        { status: 400 }
+      );
+
+      for (const grade of grades.usergrades) {
+          const finalGrade = grade?.gradeitems?.find(
+            (item: any) => item.itemtype === "course"
+          );
+
+          if (finalGrade) {
+            const notaFinal = parseFloat(
+              (finalGrade.gradeformatted || "0").replace(",", ".")
+            );
+            const minGrade = 6.0;
+
+            if (notaFinal >= minGrade) {
+              aptos += 1;
+            } else {
+              reprovados += 1;
+            }
+
+            const aluno = {
+              id: grade?.userid,
+              nome: grade?.userfullname,
+              nota: notaFinal,
+              situacao: notaFinal >= minGrade ? true : false,
+              curso: curso.fullname,
+              courseId: curso.id,
+            };
+            resultado.push(aluno);
+          }
+          notasCursos.push({
+            id: curso.id,
+            aptos,
+            reprovados,
+          });
+        }
     }
 
     return NextResponse.json(
-      { success: true, alunos: resultado, cursos: cusosDisponiveis, notasCursos },
+      {
+        success: true,
+        alunos: resultado,
+        cursos: cusosDisponiveis,
+        notasCursos,
+      },
       { status: 200 }
     );
-  } catch (error: any) {
+  } catch (error) {
     console.error("Erro ao verificar certificados:", error);
     return NextResponse.json(
-      { error: error.message || "Erro ao processar dados" },
+      { error: error || "Erro ao processar dados" },
       { status: 500 }
     );
   }
 }
-

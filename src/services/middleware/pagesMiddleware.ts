@@ -12,8 +12,8 @@ export const pagesMiddleware = async (req: NextRequest) => {
   const pathname = req.nextUrl.pathname
 
   if (!token) {
-    if (pathname.includes("/home")) {
-      return NextResponse.redirect(new URL("/", req.url))
+    if (pathname.includes("/admin")) {
+      return NextResponse.redirect(new URL("/login", req.url))
     }
     return NextResponse.next()
   }
@@ -23,8 +23,8 @@ export const pagesMiddleware = async (req: NextRequest) => {
 
     if (!response.ok) {
       console.error("Erro na resposta da API:", response.status)
-      if (pathname.includes("/home")) {
-        return NextResponse.redirect(new URL("/", req.url))
+      if (pathname.includes("/admin")) {
+        return NextResponse.redirect(new URL("/login", req.url))
       }
       return NextResponse.next()
     }
@@ -34,17 +34,17 @@ export const pagesMiddleware = async (req: NextRequest) => {
 
     console.log("Autenticado:", isAuthenticated)
 
-    if (!isAuthenticated && pathname.includes("/home")) {
-      return NextResponse.redirect(new URL("/", req.url))
+    if (!isAuthenticated && pathname.includes("/admin")) {
+      return NextResponse.redirect(new URL("/login", req.url))
     }
 
-    if (isAuthenticated && pathname === "/") {
-      return NextResponse.redirect(new URL("/home/dashboard", req.url))
+    if (isAuthenticated && pathname === "/login") {
+      return NextResponse.redirect(new URL("/admin/dashboard", req.url))
     }
   } catch (error) {
     console.error("Erro ao verificar sessão:", error)
-    if (pathname.includes("/home")) {
-      return NextResponse.redirect(new URL("/", req.url))
+    if (pathname.includes("/admin")) {
+      return NextResponse.redirect(new URL("/login", req.url))
     }
   }
 

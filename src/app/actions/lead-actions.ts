@@ -1,10 +1,9 @@
 "use server";
 
-import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { getClientIp } from "@/lib/utils";
 import { headers } from "next/headers";
-import { decryptJSON } from "@/lib/encryption";
+import { Dashboard } from "@/types/dashboard/model";
 
 type LeadInput = {
   firstname: string;
@@ -83,6 +82,30 @@ export async function getLeadStats() {
           course: responsedata.cursos,
           students: responsedata.alunos,
           notasCursos: responsedata.notasCursos,
+        };
+  } catch (error) {
+    console.error("Error fetching students:", error);
+    return { success: false, error: "Failed to fetch students" };
+  }
+}
+export async function getDashboard() {
+  try {
+    // Get all students
+    const response = await fetch("http://localhost:3000/api/moodle/dashboard", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    const responsedata: Dashboard[] = await response.json();
+    // const data = decryptJSON(responsedata.encrypted);
+    if (!responsedata) {
+      throw new Error("Failed to fetch students");
+    }
+    
+    return {
+          success: true,
+          responsedata: responsedata,
         };
   } catch (error) {
     console.error("Error fetching students:", error);

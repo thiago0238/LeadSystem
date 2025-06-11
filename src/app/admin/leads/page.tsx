@@ -1,9 +1,9 @@
-import { getServerSession } from "next-auth/next";
-import { redirect } from "next/navigation";
-import { authOptions } from "@/lib/auth";
-import prisma from "@/lib/prisma";
-import { formatDate } from "@/lib/utils";
-import DashboardLayout from "@/components/dashboard-layout";
+// import { getServerSession } from "next-auth/next";
+// import { redirect } from "next/navigation";
+// import { authOptions } from "@/lib/auth";
+// import prisma from "@/lib/prisma";
+// import { formatDate } from "@/lib/utils";
+// import DashboardLayout from "@/components/dashboard-layout";
 
 export default async function LeadsPage() {
   // const session = await getServerSession(authOptions)
@@ -12,18 +12,17 @@ export default async function LeadsPage() {
   //   redirect("/login")
   // }
 
-  const leads = await prisma.lead.findMany({
-    include: {
-      primaryCourse: true,
-      secondaryCourse: true,
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+  // const leads = await prisma.lead.findMany({
+  //   include: {
+  //     primaryCourse: true,
+  //     secondaryCourse: true,
+  //   },
+  //   orderBy: {
+  //     createdAt: "desc",
+  //   },
+  // });
 
   return (
-    <DashboardLayout>
       <div className="p-6">
         <h1 className="text-3xl font-bold mb-6">Leads</h1>
 
@@ -71,7 +70,7 @@ export default async function LeadsPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {leads.map((lead) => (
+                {/* {leads.map((lead) => (
                   <tr key={lead.id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {lead.name}
@@ -105,12 +104,11 @@ export default async function LeadsPage() {
                       Nenhum lead encontrado
                     </td>
                   </tr>
-                )}
+                )} */}
               </tbody>
             </table>
           </div>
         </div>
       </div>
-    </DashboardLayout>
   );
 }
