@@ -1,6 +1,8 @@
 'use client';
-import DashboardPage from "@/components/dashboard/dashboard-page";
+import { RealCommercialDashboard } from "@/components/dashboard/real-dash";
 
 export default function Page() {
-  return <DashboardPage />
+  return<>
+  <RealCommercialDashboard />
+  </> 
 }

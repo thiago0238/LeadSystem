@@ -20,6 +20,8 @@ export interface Dashboard {
     descriptionformat: number;
     profileimageurlsmall: string;
     profileimageurl: string;
+    city: string;
+    country: string;
     roles?: string[] | null;
     preferences?: string[] | null;
     enrolledcourses?: EnrolledCourse[] | null;

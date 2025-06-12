@@ -35,7 +35,6 @@ console.log("Access Data:", accessData)
     { period: "Últimos 3 meses", students: accessData["Últimos 3 meses"] || 0 },
     { period: "Mais de 3 meses", students: accessData["Mais de 3 meses"] || 0 },
   ]
-console.log("Chart Data:", chartData)
   return (
     <Card>
       <CardHeader>

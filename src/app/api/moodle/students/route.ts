@@ -10,8 +10,8 @@ export async function GET(request: NextRequest) {
 
     if (!courseId) {
       const students = await callMoodleApi("core_user_get_users", {
-        "criteria[0][key]": "auth",
-        "criteria[0][value]": "manual", // pode filtrar só usuários criados manualmente (opcional)
+        "criteria[0][key]": "email",
+        "criteria[0][value]": "%", // pode filtrar só usuários criados manualmente (opcional)
       })
       const encrypted = encryptJSON({ students, success: true })
       return NextResponse.json({ encrypted }, { status: 200 })

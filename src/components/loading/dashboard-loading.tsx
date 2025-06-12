@@ -1,5 +1,8 @@
 import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { Tabs, TabsList, TabsTrigger } from "../ui/tabs"
+import { Button } from "../ui/button"
+import { RefreshCw } from "lucide-react"
 
 export function DashboardLoading() {
   return (
@@ -7,10 +10,45 @@ export function DashboardLoading() {
       <div className="min-h-screen bg-gray-50 p-6">
         <div className="w-full mx-auto space-y-6">
           {/* Header Loading */}
-          <div className="text-center space-y-2">
-            <Skeleton className="h-8 w-64 mx-auto" />
-            <Skeleton className="h-4 w-96 mx-auto" />
+          {/* Header */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  Dashboard Comercial
+                </h1>
+                <p className="text-gray-600">
+                  Insights para estratégias de marketing e vendas
+                </p>
+              </div>
+              <Button
+               
+                variant="outline"
+                className="gap-2"
+              >
+                <RefreshCw
+                  className={`h-4 w-4 animate-spin`}
+                />
+                {"Atualizando..."}
+              </Button>
+            </div>
           </div>
+          {/* Filtros */}
+          <div className="flex">
+            <Skeleton className="h-4 w-96 mx-auto" />
+            <Skeleton className="h-4 w-96 mx-auto" />
+            
+          </div>
+          <Tabs defaultValue="overview" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-5">
+              <TabsTrigger value="overview"><Skeleton className="h-4 w-96 mx-auto" /></TabsTrigger>
+              <TabsTrigger value="geographic"><Skeleton className="h-4 w-96 mx-auto" /></TabsTrigger>
+              <TabsTrigger value="courses"><Skeleton className="h-4 w-96 mx-auto" /></TabsTrigger>
+              <TabsTrigger value="engagement"><Skeleton className="h-4 w-96 mx-auto" /></TabsTrigger>
+              <TabsTrigger value="opportunities"><Skeleton className="h-4 w-96 mx-auto" /></TabsTrigger>
+            </TabsList>
+          </Tabs>
+
 
           {/* Overview Cards Loading */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -23,33 +61,6 @@ export function DashboardLoading() {
                 <CardContent>
                   <Skeleton className="h-8 w-16" />
                   <Skeleton className="h-3 w-20 mt-1" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {/* Course Analytics Loading */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {Array.from({ length: 2 }).map((_, i) => (
-              <Card key={i}>
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <Skeleton className="h-5 w-5" />
-                    <Skeleton className="h-5 w-48" />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {Array.from({ length: 5 }).map((_, j) => (
-                      <div key={j} className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Skeleton className="h-6 w-6" />
-                          <Skeleton className="h-4 w-32" />
-                        </div>
-                        <Skeleton className="h-6 w-20" />
-                      </div>
-                    ))}
-                  </div>
                 </CardContent>
               </Card>
             ))}
@@ -69,26 +80,7 @@ export function DashboardLoading() {
             ))}
           </div>
 
-          {/* Student List Loading */}
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-6 w-32" />
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="flex items-center space-x-4 p-4 border rounded-md">
-                    <Skeleton className="h-10 w-10 rounded-full" />
-                    <div className="space-y-2 flex-1">
-                      <Skeleton className="h-4 w-48" />
-                      <Skeleton className="h-3 w-32" />
-                    </div>
-                    <Skeleton className="h-6 w-16" />
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          
         </div>
       </div>
     </div>

@@ -9,7 +9,6 @@ import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard,
-  Users,
   FileText,
   LogOut,
   Menu,
@@ -27,7 +26,7 @@ export default function DashboardLayout({
 
   const navigation = [
     { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
-    { name: "Leads", href: "/admin/leads", icon: Users },
+    // { name: "Leads", href: "/admin/leads", icon: Users },
     { name: "Certificados", href: "/admin/certificates", icon: FileText },
   ];
 

@@ -1,13 +1,18 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import amqp from 'amqplib'
 
+interface EmailPayload {
+  leadId: string
+  cursoId: string
+}[]
+
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json()
-    const { nome, curso, email, studentId, courseId } = body
+    const body: EmailPayload = await req.json()
+    console.log('Recebido payload:', body)
 
-    if (!nome || !curso || !email || !studentId || !courseId) {
-      return NextResponse.json({ error: 'Campos obrigatórios: nome, curso, email.' }, { status: 400 })
+    if (!body || !Array.isArray(body)) {
+      return NextResponse.json({ error: 'Formato inválido. Esperado um array de objetos.' }, { status: 400 })
     }
 
     const conn = await amqp.connect('amqps://jcvpvgcv:FlhZEL9y-BSZIiy3HwLug-3QMkUn19Lc@chimpanzee.rmq.cloudamqp.com/jcvpvgcv')
@@ -16,13 +21,15 @@ export async function POST(req: NextRequest) {
 
     await channel.assertQueue(queue, { durable: true })
 
-    const payload = { nome, curso, email, studentId, courseId }
-    channel.sendToQueue(queue, Buffer.from(JSON.stringify(payload)), { persistent: true })
+    body.forEach(({ leadId, cursoId }) => {
+      const payload = { leadId, cursoId }
+      channel.sendToQueue(queue, Buffer.from(JSON.stringify(payload)), { persistent: true })
+    })
 
     await channel.close()
     await conn.close()
 
-    return NextResponse.json({ message: 'Certificado enviado para processamento.', data: payload, success: true }, { status: 200 })
+    return NextResponse.json({ message: 'Certificado enviado para processamento.', success: true }, { status: 200 })
   } catch (err) {
     console.error('Erro ao enviar para a fila:', err)
     return NextResponse.json({ error: 'Erro interno ao enviar para a fila.', success: false }, { status: 500 })

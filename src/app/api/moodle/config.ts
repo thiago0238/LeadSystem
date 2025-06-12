@@ -93,7 +93,7 @@ export async function callMoodleApi(
       () => controller.abort(),
       moodleConfig.timeout
     );
-
+console.log('Calling Moodle API:', url.toString());
     const response = await fetch(url.toString(), {
       method: "GET",
       headers: {
