@@ -1,22 +1,11 @@
-FROM node:20-alpine
-
-# Cria diretório de trabalho
+FROM node:22-slim
+# Instale o OpenSSL e suas dependências
+RUN apt-get update && apt-get install -y openssl libssl-dev
 WORKDIR /app
-
-# Copia arquivos de dependência
-COPY package*.json ./
-
-# Instala dependências
-RUN npm install
-
-# Copia restante da aplicação
+COPY package.json .
 COPY . .
-
-# Gera os clientes Prisma
+RUN npm ci 
 RUN npx prisma generate
-
-# Expõe a porta usada pelo app (por padrão, 3000)
-EXPOSE 3000
-
-# Comando para iniciar o app
-CMD ["npm", "run", "dev"]
+# RUN npm i sharp
+RUN npm run build
+CMD ["npm","run","start"]

@@ -186,10 +186,14 @@ export function CertificateForm({ students, courses }: CertificateFormProps) {
     await withLoading(async () => {
       try {
         const certificatesToSend = idsToSend.map((uniqueId) => {
-          const [leadId, courseId] = uniqueId.split("-");
+          const [leadId, courseId, curso, nome, email, nota] = uniqueId.split("-");
           return {
             leadId: Number(leadId),
             courseId: Number(courseId),
+            curso,
+            nome,
+            email,
+            nota: Number(nota),
           };
         });
         const response = await fetch("/api/email", {
@@ -483,12 +487,12 @@ export function CertificateForm({ students, courses }: CertificateFormProps) {
                     const isEligible =
                       student.situacao && !student.certificadoEnviado;
                     const isSelected = selectedItems.includes(
-                      `${student.id}-${student.courseId}`
+                      `${student.id}-${student.courseId}-${student.curso}-${student.nome}-${student.email}-${student.nota}`
                     );
 
                     return (
                       <Card
-                        key={`${student.id}-${student.courseId}`}
+                        key={`${student.id}-${student.courseId}-${student.curso}-${student.nome}-${student.email}-${student.nota}`}
                         className={`transition-all duration-200 ${
                           isSelected
                             ? "ring-2 ring-blue-500 bg-blue-50/50"
@@ -502,7 +506,7 @@ export function CertificateForm({ students, courses }: CertificateFormProps) {
                                 checked={isSelected}
                                 onCheckedChange={(checked) =>
                                   handleSelectItem(
-                                    `${student.id}-${student.courseId}`,
+                                    `${student.id}-${student.courseId}-${student.curso}-${student.nome}-${student.email}-${student.nota}`,
                                     !!checked
                                   )
                                 }
@@ -585,7 +589,7 @@ export function CertificateForm({ students, courses }: CertificateFormProps) {
                                   variant="outline"
                                   onClick={() =>
                                     handleSendCertificates([
-                                      `${student.id}-${student.courseId}`,
+                                      `${student.id}-${student.courseId}-${student.curso}-${student.nome}-${student.email}-${student.nota}`,
                                     ])
                                   }
                                   disabled={isLoading}

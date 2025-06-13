@@ -1,15 +1,19 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import amqp from 'amqplib'
+import { callMoodleApi, callMoodleApiPost } from '../moodle/config'
 
 interface EmailPayload {
   leadId: string
   cursoId: string
+  email: string
+  nome: string
+  curso: string
+  nota: number
 }[]
 
 export async function POST(req: NextRequest) {
   try {
     const body: EmailPayload = await req.json()
-    console.log('Recebido payload:', body)
 
     if (!body || !Array.isArray(body)) {
       return NextResponse.json({ error: 'Formato inválido. Esperado um array de objetos.' }, { status: 400 })
@@ -21,8 +25,13 @@ export async function POST(req: NextRequest) {
 
     await channel.assertQueue(queue, { durable: true })
 
-    body.forEach(({ leadId, cursoId }) => {
-      const payload = { leadId, cursoId }
+    body.forEach(async ({ leadId, cursoId, email, nome, curso, nota }) => {
+      const response = await callMoodleApiPost("core_user_get_users_by_field", {
+        field: "id",
+        values: [leadId]
+      })
+      email = response[0]?.email
+      const payload = { leadId, cursoId, email, nome, curso, nota }
       channel.sendToQueue(queue, Buffer.from(JSON.stringify(payload)), { persistent: true })
     })
 

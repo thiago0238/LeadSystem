@@ -73,7 +73,6 @@ export default function PublicForm() {
       try {
         const response = await fetch("/api/moodle/courses");
         const data = await response.json();
-        console.log("Cursos carregados:", data);
         setCourses(data);
         console.log("Cursos:", courses);
       } catch (error) {
