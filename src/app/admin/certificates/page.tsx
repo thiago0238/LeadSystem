@@ -10,16 +10,16 @@ interface Certificate {
 
 export default async function CertificatesPage() {
   const stats = await getLeadStats();
-  const certificate1 = await prisma.certificate.findMany({
+  const certificate = await prisma.certificate.findMany({
     select: {
       courseId: true,
       leadId: true,
     },
   });
-  const handleSendCertificate = async (certificates: Certificate[]) => {
+  const handleSendCertificate = async (certificate: Certificate[]) => {
     const updatedStudents = stats.students.map(
       (student: { id: number; courseId: number }) => {
-        const certificadoEnviado = certificates.some(
+        const certificadoEnviado = certificate.some(
           (cert) =>
             cert.leadId === student.id && cert.courseId === student.courseId
         );
@@ -32,7 +32,7 @@ export default async function CertificatesPage() {
 
     stats.students = updatedStudents;
   };
-  handleSendCertificate(certificate1);
+  handleSendCertificate(certificate);
 
   return (
     <div className="p-6">

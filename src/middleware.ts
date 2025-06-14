@@ -4,10 +4,10 @@ import { pagesMiddleware } from "@/services/middleware/pagesMiddleware";
 import { NextRequest } from "next/server";
 
 export async function middleware(req: NextRequest) {
-  if (req.nextUrl.pathname.startsWith("/api"))
-   {
-    return apiMiddleware(req);
-  }
+  // if (req.nextUrl.pathname.startsWith("/api"))
+  //  {
+  //   return apiMiddleware(req);
+  // }
   return pagesMiddleware(req);
 }
 

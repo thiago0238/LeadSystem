@@ -484,8 +484,10 @@ export function CertificateForm({ students, courses }: CertificateFormProps) {
                     const course = courses.find(
                       (c) => c.id === student.courseId
                     );
+                    // const isEligible =
+                    //   student.situacao && !student.certificadoEnviado;
                     const isEligible =
-                      student.situacao && !student.certificadoEnviado;
+                      student.situacao;
                     const isSelected = selectedItems.includes(
                       `${student.id}-${student.courseId}-${student.curso}-${student.nome}-${student.email}-${student.nota}`
                     );

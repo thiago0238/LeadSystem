@@ -4,7 +4,7 @@ import { callMoodleApi, callMoodleApiPost } from '../moodle/config'
 
 interface EmailPayload {
   leadId: string
-  cursoId: string
+  courseId: number
   email: string
   nome: string
   curso: string
@@ -23,17 +23,21 @@ export async function POST(req: NextRequest) {
     const channel = await conn.createChannel()
     const queue = 'fila-certificados'
 
-    await channel.assertQueue(queue, { durable: true })
-
-    body.forEach(async ({ leadId, cursoId, email, nome, curso, nota }) => {
+    for (const item of body) {
       const response = await callMoodleApiPost("core_user_get_users_by_field", {
         field: "id",
-        values: [leadId]
+        values: [item.leadId]
       })
-      email = response[0]?.email
-      const payload = { leadId, cursoId, email, nome, curso, nota }
+      item.email = response[0]?.email
+    }
+
+
+    await channel.assertQueue(queue, { durable: true })
+
+    for (const { leadId, courseId, email, nome, curso, nota } of body) {
+      const payload = { leadId, courseId, email, nome, curso, nota }
       channel.sendToQueue(queue, Buffer.from(JSON.stringify(payload)), { persistent: true })
-    })
+    }
 
     await channel.close()
     await conn.close()
