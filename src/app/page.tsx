@@ -1,14 +1,19 @@
-import PublicForm from "@/components/public-form";
+import LoginForm from "@/components/login-form";
+import { Suspense } from 'react';
 
-export default function Home() {
+
+export default function LoginPage() {
   return (
-    <main className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
       <div className="w-full max-w-md">
         <h1 className="text-3xl font-bold text-center mb-6">
-          Cadastro de Interesse
+          Área Administrativa
         </h1>
-        <PublicForm />
+        <Suspense fallback={<div>Carregando...</div>}>
+        <LoginForm />
+        </Suspense>
       </div>
-    </main>
+    </div>
   );
 }
+
