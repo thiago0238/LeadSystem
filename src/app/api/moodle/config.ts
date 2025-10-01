@@ -23,7 +23,7 @@ export async function callMoodleApiPost(
       moodleConfig.timeout
     );
 
-    console.log(`Calling Moodle API: ${functionName}`);
+    console.log(`Calling Moodle API POST: ${url} with params:`, params);
     const response = await fetch(url, {
       method: "POST", // O Moodle espera POST
       headers: {
@@ -109,6 +109,7 @@ console.log('Calling Moodle API:', url.toString());
     const responseBody = await response.text(); // Obtém a resposta como texto
     try {
       const data = JSON.parse(responseBody); // Converte o texto para JSON
+      console.log("Moodle API response:", data);
 
       // Se Moodle retornar um erro dentro do JSON
       if (data && data.exception) {

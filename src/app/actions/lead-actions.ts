@@ -42,22 +42,16 @@ export async function submitLead(data: LeadInput) {
         }),
       }
     );
-    // if (!leadData.ok)
-    //   await prisma.lead.create({
-    //     data: {
-    //       name: data.firstname,
-    //       email: data.email,
-    //       primaryCourseId: data.primaryCourseId,
-    //       secondaryCourseId: data.secondaryCourseId,
-    //       ipAddress,
-    //     },
-    //   });
+    if (!leadData.ok) {
+      const errorData = await leadData.json();
+      throw new Error(errorData.error);
+    }
 
     revalidatePath("http://localhost:9090/moodle/login/index.php");
     return { success: true };
   } catch (error) {
     console.error("Error submitting lead:", error);
-    return { success: false, error: "Failed to submit lead" };
+    return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
   }
 }
 

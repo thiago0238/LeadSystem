@@ -29,8 +29,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { toast } from "@/components/ui/use-toast";
 import { submitLead } from "@/app/actions/lead-actions";
+import { Check, X } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 const formSchema = z.object({
   firstname: z
@@ -41,10 +42,28 @@ const formSchema = z.object({
     .min(2, { message: "Sobrenome deve ter pelo menos 2 caracteres" }),
   password: z
     .string()
-    .min(6, { message: "Senha deve ter pelo menos 6 caracteres" }),
+    .min(6, { message: "Senha deve ter pelo menos 6 caracteres" })
+    .regex(/[a-z]/, "A senha deve conter pelo menos uma letra minúscula")
+    .regex(/[A-Z]/, "A senha deve conter pelo menos uma letra maiúscula")
+    .regex(/[0-9]/, "A senha deve conter pelo menos um número")
+    .regex(
+      /[^a-zA-Z0-9]/,
+      "A senha deve conter pelo menos um caractere especial"
+    ),
+  confirmPassword: z
+    .string()
+    .min(6, {
+      message: "Confirmação de senha deve ter pelo menos 6 caracteres",
+    })
+    .regex(/[a-z]/, "A senha deve conter pelo menos uma letra minúscula")
+    .regex(/[A-Z]/, "A senha deve conter pelo menos uma letra maiúscula")
+    .regex(/[0-9]/, "A senha deve conter pelo menos um número")
+    .regex(
+      /[^a-zA-Z0-9]/,
+      "A senha deve conter pelo menos um caractere especial"
+    ),
   email: z.string().email({ message: "Email inválido" }),
   primaryCourseId: z.string({ required_error: "Selecione um curso principal" }),
-  secondaryCourseId: z.string().optional(),
 });
 
 type Course = {
@@ -55,6 +74,7 @@ type Course = {
 export default function PublicForm() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -63,8 +83,8 @@ export default function PublicForm() {
       lastname: "",
       email: "",
       password: "",
+      confirmPassword: "",
       primaryCourseId: "",
-      secondaryCourseId: "",
     },
   });
 
@@ -74,7 +94,6 @@ export default function PublicForm() {
         const response = await fetch("/api/moodle/courses");
         const data = await response.json();
         setCourses(data);
-        console.log("Cursos:", courses);
       } catch (error) {
         console.error("Erro ao carregar cursos:", error);
         toast({
@@ -90,8 +109,6 @@ export default function PublicForm() {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
-    console.log("Valores do formulário:", values);
-    console.log("Valores do formulário (JSON):", JSON.stringify(values));
     try {
       const result = await submitLead({
         firstname: values.firstname,
@@ -99,40 +116,58 @@ export default function PublicForm() {
         password: values.password,
         email: values.email,
         primaryCourseId: Number.parseInt(values.primaryCourseId),
-        secondaryCourseId: values.secondaryCourseId
-          ? Number.parseInt(values.secondaryCourseId)
-          : undefined,
       });
-
-      if (result.success) {
+      console.log("Resultado do envio:", result);
+      if (!result.success) {
+        throw new Error(result.error || "Erro desconhecido");
+      }
         toast({
           title: "Cadastro realizado com sucesso!",
           description:
-            "Obrigado pelo seu interesse. Entraremos em contato em breve.",
+            "Obrigado pelo seu interesse. ",
         });
-        form.reset();
-      } else {
-        throw new Error(result.error || "Erro ao processar cadastro");
-      }
+        // form.reset();
+      
     } catch (error) {
       console.error("Erro ao enviar formulário:", error);
       toast({
         title: "Erro no cadastro",
-        description:
-          "Ocorreu um erro ao processar seu cadastro. Por favor, tente novamente.",
+        description: error instanceof Error ? error.message : "Erro desconhecido",
         variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
     }
   };
+  const passwordValue = form.watch("password");
+  const confirmPasswordValue = form.watch("confirmPassword");
+
+  function getPasswordValidationStatus(password: string) {
+    return {
+      temMinuscula: /[a-z]/.test(password),
+      temMaiuscula: /[A-Z]/.test(password),
+      temNumero: /[0-9]/.test(password),
+      temEspecial: /[^a-zA-Z0-9]/.test(password),
+      tamanhoMinimo: password.length >= 8,
+    };
+  }
+  function isPasswordValid() {
+    if (!passwordValue || !confirmPasswordValue) return;
+    return passwordValue === confirmPasswordValue;
+  }
 
   return (
-    <Card>
+    <div className="Segoe UI tahoma Geneva Verdana sans-serif ">
+      <img
+        src="https://moodleapoio.pucgoias.edu.br/InscricaoApoio/img/technology.jpg"
+        alt="Background Image"
+        className="absolute inset-0  w-full  object-cover "
+      />
+    <Card className="relative bg-white shadow-lg p-6 overflow-auto max-h-[100vh] rounded-lg">
       <CardHeader>
-        <CardTitle>Formulário de Interesse</CardTitle>
+        <CardTitle className="text-[#004a6e] margin-bottom-8 font-bold">Formulário de Interesse</CardTitle>
         <CardDescription>
-          Preencha seus dados para receber informações sobre nossos cursos
+          Preencha seus dados para inscrever-se no curso.
         </CardDescription>
       </CardHeader>
       <Form {...form}>
@@ -143,7 +178,7 @@ export default function PublicForm() {
               name="firstname"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nome </FormLabel>
+                  <FormLabel className="text-[#004a6e] margin-bottom-8 font-bold">Nome </FormLabel>
                   <FormControl>
                     <Input placeholder="Digite seu nome " {...field} />
                   </FormControl>
@@ -156,7 +191,7 @@ export default function PublicForm() {
               name="lastname"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Sobrenome</FormLabel>
+                  <FormLabel className="text-[#004a6e] margin-bottom-8 font-bold">Sobrenome</FormLabel>
                   <FormControl>
                     <Input placeholder="Digite seu sobrenome" {...field} />
                   </FormControl>
@@ -169,7 +204,7 @@ export default function PublicForm() {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel className="text-[#004a6e] margin-bottom-8 font-bold">Email</FormLabel>
                   <FormControl>
                     <Input
                       placeholder="seu@email.com"
@@ -184,22 +219,113 @@ export default function PublicForm() {
             <FormField
               control={form.control}
               name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Senha</FormLabel>
-                  <FormControl>
-                    <Input placeholder="*****" type="password" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              render={({ field }) => {
+                const status = getPasswordValidationStatus(passwordValue || "");
+                const showValidation =
+                  isPasswordFocused || passwordValue.length > 0;
+
+                return (
+                  <FormItem>
+                    <FormLabel className="text-[#004a6e] margin-bottom-8 font-bold">Senha</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="*****"
+                        type="password"
+                        {...field}
+                        onFocus={() => setIsPasswordFocused(true)}
+                        onBlur={() => setIsPasswordFocused(false)}
+                      />
+                    </FormControl>
+                    {showValidation && (
+                      <div className="text-xs mt-2 space-y-1 text-gray-500">
+                        <p
+                          className={
+                            status.temMinuscula
+                              ? "text-green-600"
+                              : "text-red-500"
+                          }
+                        >
+                          • Pelo menos uma letra minúscula
+                        </p>
+                        <p
+                          className={
+                            status.temMaiuscula
+                              ? "text-green-600"
+                              : "text-red-500"
+                          }
+                        >
+                          • Pelo menos uma letra maiúscula
+                        </p>
+                        <p
+                          className={
+                            status.temNumero ? "text-green-600" : "text-red-500"
+                          }
+                        >
+                          • Pelo menos um número
+                        </p>
+                        <p
+                          className={
+                            status.temEspecial
+                              ? "text-green-600"
+                              : "text-red-500"
+                          }
+                        >
+                          • Pelo menos um caractere especial
+                        </p>
+                        <p
+                          className={
+                            status.tamanhoMinimo
+                              ? "text-green-600"
+                              : "text-red-500"
+                          }
+                        >
+                          • Pelo menos 6 caracteres
+                        </p>
+                      </div>
+                    )}
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
+            />
+            <FormField
+              control={form.control}
+              name="confirmPassword"
+              render={({ field }) => {
+                const showValidation =
+                   confirmPasswordValue.length > 0;
+
+                return (
+                  <FormItem>
+                    <FormLabel className="text-[#004a6e] mb-8 font-bold">Confirme a Senha</FormLabel>
+                    <FormControl>
+                      <Input placeholder="*****" type="password" {...field} />
+                    </FormControl>
+
+                    {showValidation &&( isPasswordValid() ? (
+                      <div className="text-xs mt-2 space-y-1 text-gray-500">
+                        <Check className="h-4 w-4 text-green-600" />
+                        <span className="text-green-600">Senhas coincidem</span>
+                      </div>
+                    ) : (
+                      <div className="text-xs mt-2 space-y-1 text-gray-500">
+                        <X className="h-4 w-4 text-red-500" />
+                        <span className="text-red-500">
+                          Senhas não coincidem
+                        </span>
+                      </div>
+                    ))}
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
             />
             <FormField
               control={form.control}
               name="primaryCourseId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Curso Principal</FormLabel>
+                  <FormLabel className="text-[#004a6e] margin-bottom-8 font-bold">Curso Principal</FormLabel>
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
@@ -207,37 +333,6 @@ export default function PublicForm() {
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione um curso" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {Array.isArray(courses) &&
-                        courses.map((course) => (
-                          <SelectItem
-                            key={course.id}
-                            value={course.id.toString()}
-                          >
-                            {course.fullname}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="secondaryCourseId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Curso Secundário (opcional)</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione um curso secundário (opcional)" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -265,5 +360,6 @@ export default function PublicForm() {
         </form>
       </Form>
     </Card>
+    </div>
   );
 }

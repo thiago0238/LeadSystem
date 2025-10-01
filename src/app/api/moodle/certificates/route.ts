@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
             const notaFinal = parseFloat(
               (finalGrade.gradeformatted || "0").replace(",", ".")
             );
-            const minGrade = 6.0;
+            const minGrade = 60.0;
 
             if (notaFinal >= minGrade) {
               aptos += 1;

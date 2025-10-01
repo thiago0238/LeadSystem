@@ -6,7 +6,8 @@ export async function GET(request: NextRequest) {
   try {
     // Get all courses or courses by category
     const courses = await callMoodleApi("core_course_get_courses")
-    return NextResponse.json(courses, { status: 200 })
+    const response = courses.filter((course: any) => course.categoryid === 1) // Example filter, adjust as needed
+    return NextResponse.json(response , { status: 200 })
   } catch (error: any) {
     console.error("Error fetching courses:", error)
     return NextResponse.json({ error: error.message || "Failed to fetch courses" }, { status: 500 })

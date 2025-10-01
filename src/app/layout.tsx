@@ -7,9 +7,12 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "Sistema de Controle de Leads e Certificados",
-  description: "Gerencie leads e emita certificados para seus cursos",
-  generator: "v0.dev",
+  title: "Formulário",
+  description: "Cursos Cead",
+  generator: "Cead",
+  icons: {
+    icon: "/icon.ico",
+  },
 };
 
 export default function RootLayout({
@@ -19,14 +22,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className={inter.className  }>
         <ThemeProvider attribute="class" defaultTheme="light">
-          {children}
           <Toaster />
+          {children}
         </ThemeProvider>
       </body>
     </html>
   );
 }
 
-import "./globals.css";
+import "./globals.css";import { icons } from "lucide-react";
+

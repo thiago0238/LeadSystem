@@ -9,3 +9,57 @@ gradereport_user_get_grade_items
 core_course_get_courses
 core_course_create_courses
 gradereport_user_get_grades_table
+core_enrol_get_users_courses
+
+
+O que você trouxe é a resposta JSON da API de Notas do Moodle (provavelmente do serviço gradereport_user_get_grades_table), e a estrutura bate exatamente com a documentação oficial.
+
+👉 Vou destrinchar:
+
+Estrutura principal
+
+usergrades → lista de usuários (cada usuário tem suas notas em cada disciplina).
+
+Dentro de cada usuário:
+
+courseid → ID do curso.
+
+courseidnumber → código interno do curso.
+
+userid → ID do aluno.
+
+userfullname → Nome completo do aluno.
+
+useridnumber → número de matrícula ou identificador institucional.
+
+maxdepth → profundidade da tabela (serve para renderizar hierarquia no frontend do Moodle).
+
+gradeitems → lista de itens de avaliação (provas, quizzes, atividades, etc.).
+
+Estrutura de cada grade item (item de avaliação)
+
+id → ID do item de nota.
+
+itemname → Nome do item (ex.: “Quiz 1”, “Atividade Final”).
+
+itemtype → Tipo do item (mod, course, category etc.).
+
+itemmodule → Módulo relacionado (ex.: quiz, assignment).
+
+iteminstance → Instância do módulo (ex.: ID do quiz ou tarefa).
+
+cmid → ID do course module (link entre curso e atividade).
+
+weightraw / weightformatted → peso da nota na média do curso.
+
+graderaw → nota bruta (antes de arredondar/formatação).
+
+gradeformatted → nota formatada (o que aparece no Moodle).
+
+grademin / grademax → intervalo possível (ex.: 0 a 10).
+
+percentageformatted → nota em percentual.
+
+feedback → feedback textual do professor (quando há).
+
+Campos booleanos (true/false) como gradeishidden, gradeislocked, gradeisoverridden → flags de controle.
