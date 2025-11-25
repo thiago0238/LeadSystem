@@ -13,16 +13,13 @@ export async function callMoodleApiPost(
   if (!moodleConfig.baseUrl || !moodleConfig.token) {
     throw new Error("Moodle API configuration is missing");
   }
-
   const url = `${moodleConfig.baseUrl}/webservice/rest/server.php`;
-
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(
       () => controller.abort(),
       moodleConfig.timeout
     );
-
     console.log(`Calling Moodle API POST: ${url} with params:`, params);
     const response = await fetch(url, {
       method: "POST", // O Moodle espera POST
@@ -43,17 +40,13 @@ export async function callMoodleApiPost(
       }).toString(), // Transforma os dados no formato correto para a API do Moodle
       signal: controller.signal,
     });
-
     clearTimeout(timeoutId);
-
     const data = await response.json();
-
     // Moodle retorna erros no JSON
     if (data?.exception) {
       console.error("Moodle API error:", data);
       throw new Error(`Moodle API error: ${data.message || "Unknown error"}`);
     }
-
     return data;
   } catch (error) {
     console.error("Error calling Moodle API:", error);
@@ -68,9 +61,7 @@ export async function callMoodleApi(
   if (!moodleConfig.baseUrl || !moodleConfig.token) {
     throw new Error("Moodle API configuration is missing");
   }
-
   const url = new URL(`${moodleConfig.baseUrl}/webservice/rest/server.php`);
-
   // Add standard parameters
   const token = process.env.MOODLE_API_TOKEN;
   if (!token) {
@@ -79,14 +70,12 @@ export async function callMoodleApi(
   url.searchParams.append("wstoken", token);
   url.searchParams.append("wsfunction", functionName);
   url.searchParams.append("moodlewsrestformat", "json");
-
   // Add custom parameters
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== null) {
       url.searchParams.append(key, value.toString());
     }
   });
-
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(
@@ -101,22 +90,17 @@ console.log('Calling Moodle API:', url.toString());
       },
       signal: controller.signal,
     });
-
     clearTimeout(timeoutId);
-
     // 🔥 Leia o corpo da resposta apenas uma vez
-    
     const responseBody = await response.text(); // Obtém a resposta como texto
     try {
       const data = JSON.parse(responseBody); // Converte o texto para JSON
       console.log("Moodle API response:", data);
-
       // Se Moodle retornar um erro dentro do JSON
       if (data && data.exception) {
         console.error("Moodle API error:", data);
         throw new Error(`Moodle API error: ${data.message || "Unknown error"}`);
       }
-
       return data;
     } catch (error) {
       console.error("Error parsing JSON from Moodle API:", error);

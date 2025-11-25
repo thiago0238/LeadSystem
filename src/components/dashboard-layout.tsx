@@ -13,6 +13,7 @@ import {
   LogOut,
   Menu,
   X,
+  BarChart3
 } from "lucide-react";
 import LoadingIndicator from "./loading-indicator";
 
@@ -26,7 +27,7 @@ export default function DashboardLayout({
 
   const navigation = [
     { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
-    // { name: "Leads", href: "/admin/leads", icon: Users },
+    { name: "AI", href: "/admin/ai", icon: BarChart3 },
     { name: "Certificados", href: "/admin/certificates", icon: FileText },
   ];
 
